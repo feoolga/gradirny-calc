@@ -8,6 +8,7 @@ import { CalculationIntermediateValuesSection } from "./CalculationIntermediateV
 import { CalculationWaterDebetSection } from "./CalculationWaterDebetSection";
 import { useNavigate } from 'react-router-dom';
 import { calculations } from '../utils/calculations';
+// import getCalculationResults from '../utils/calculations';
 
 const validationSchema = Yup.object({
   initialData: Yup.object({
@@ -56,7 +57,7 @@ export const CalculationForm = () => {
     validationSchema,
     onSubmit: (values) => {
       // +++ Используем новую функцию из утилит
-      const results = getCalculationResults(values);
+      const results = calculations.getCalculationResults(values);
       navigate('/results-table', { state: { results } });
     },
   });
