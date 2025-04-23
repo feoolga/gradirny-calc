@@ -6,7 +6,7 @@ import './App.css';
 
 function App() {
   return (
-    <div className="vw-100 bg-dark">
+    <div className="vw-100" style={{ backgroundColor: '#009999' }}>
       <BrowserRouter basename="/gradirny-calc">
         <Routes>
           <Route path="/" element={<CalculationForm />} />
