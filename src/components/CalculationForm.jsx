@@ -15,7 +15,51 @@ import { calculations } from '../utils/calculations';
 import { PHYSICS } from '../utils/constants';
 
 const validationSchema = Yup.object({
-  // ... ваша схема валидации (оставьте без изменений)
+  city: Yup.string().required('Укажите город'),
+  initialData: Yup.object({
+    g1: Yup.number().required("Обязательное поле").min(1000, "Минимум 1000 м³/ч"),
+    n: Yup.number().required("Обязательное поле").min(1, "Минимум 1 секция").integer("Должно быть целым числом"),
+    t1: Yup.number().required("Обязательное поле").min(0, "Минимум 0°C").max(100, "Максимум 100°C"),
+    t2: Yup.number().required("Обязательное поле").min(0, "Минимум 0°C").max(100, "Максимум 100°C")
+      .test('t2-less-t1', 't₂ должна быть меньше t₁', function(value) {
+        return value < this.parent.t1;
+      }),
+  }),
+  towerParameters: Yup.object({
+    width: Yup.number().required("Обязательное поле").min(1, "Минимум 1 м").max(50, "Максимум 50 м"),
+    length: Yup.number().required("Обязательное поле").min(1, "Минимум 1 м").max(50, "Максимум 50 м"),
+    fanDiameter: Yup.number().required("Обязательное поле").min(0.5, "Минимум 0.5 м").max(20, "Максимум 20 м"),
+    windowHeight: Yup.number().required("Обязательное поле").min(0.5, "Минимум 0.5 м").max(10, "Максимум 10 м"),
+  }),
+  airParameters: Yup.object({
+    humidity: Yup.number()
+      .required("Укажите влажность")
+      .min(0, "Минимум 0%")
+      .max(100, "Максимум 100%"),
+    temperature_dry: Yup.number()
+      .required("Укажите температуру")
+      .min(-50, "Минимум -50°C")
+      .max(60, "Максимум 60°C"),
+    barometric_press: Yup.number()
+      .required("Укажите давление")
+      .min(90, "Минимум 90 кПа")
+      .max(110, "Максимум 110 кПа"),
+  }),
+  sprinklerCharacteristics: Yup.object({
+    a0: Yup.number().required("Обязательное поле").min(0.1, "Минимум 0.1").max(2, "Максимум 2"),
+    m: Yup.number().required("Обязательное поле").min(0.1, "Минимум 0.1").max(1, "Максимум 1"),
+    kor: Yup.number().required("Обязательное поле").min(0.1, "Минимум 0.1").max(2, "Максимум 2"),
+    hor: Yup.number().required("Обязательное поле").min(0.1, "Минимум 0.1 м").max(5, "Максимум 5 м"),
+  }),
+  resistanceCoefficients: Yup.object({
+    zso: Yup.number().required("Обязательное поле").min(1, "Минимум 1").max(20, "Максимум 20"),
+    zvu: Yup.number().required("Обязательное поле").min(1, "Минимум 1").max(20, "Максимум 20"),
+    zok: Yup.number().required("Обязательное поле").min(1, "Минимум 1").max(20, "Максимум 20"),
+  }),
+  efficiency: Yup.object({
+    etaK: Yup.number().required("Обязательное поле").min(0.1, "Минимум 0.1").max(1, "Максимум 1"),
+    etaP: Yup.number().required("Обязательное поле").min(0.1, "Минимум 0.1").max(1, "Максимум 1"),
+  }),
 });
 
 export const CalculationForm = () => {
@@ -28,9 +72,9 @@ export const CalculationForm = () => {
     gy: '0' 
   });
 
-  // 1. Инициализация Formik (должно быть в начале компонента)
   const formik = useFormik({
     initialValues: {
+      city: 'Волгоград',
       initialData: {
         g1: 7500,
         n: 3,
@@ -71,7 +115,6 @@ export const CalculationForm = () => {
     },
   });
 
-  // 2. Получаем значения из formik
   const { values } = formik;
   const { g1, n, t1, t2 } = values.initialData || {};
   const { width, length, fanDiameter, windowHeight } = values.towerParameters || {};
@@ -80,7 +123,6 @@ export const CalculationForm = () => {
   const { zso, zvu, zok } = values.resistanceCoefficients || {};
   const { etaK, etaP } = values.efficiency || {};
 
-  // 3. Оптимизированные вычисления с useMemo
   const area = useMemo(() => width * length, [width, length]);
   const L = useMemo(() => width / 4, [width]);
   const tAvg = useMemo(() => (parseFloat(t1) + parseFloat(t2)) / 2, [t1, t2]);
@@ -134,14 +176,12 @@ export const CalculationForm = () => {
     [n0, etaP]
   );
 
-  // 4. Обновление результатов
   useEffect(() => {
     if (g1 && t1 && t2 && n && width && length && windowHeight && 
         humidity !== undefined && temperature_dry !== undefined &&
         a0 && m && kor && hor && zso && zvu && zok && etaK && etaP) {
       
       setAutoResults({
-        // Основные параметры
         wetBulbTemp: calculations.calcWetBulbTemp(temperature_dry, humidity).toFixed(1),
         gx: qx.toFixed(2),
         gg: gg.toFixed(2),
@@ -151,13 +191,9 @@ export const CalculationForm = () => {
         gp: gp,
         gd: gd,
         lambda: lambda.toFixed(2),
-        
-        // Параметры градирни
         towerArea: area.toFixed(2),
         airDistributorLength: L.toFixed(2),
         windowArea: (length * n * windowHeight).toFixed(2),
-        
-        // Вентиляторная установка (для FanSystemResultsSection)
         staticPressure: pStatic.toFixed(2),
         dynamicPressure: pDynamic.toFixed(2),
         totalPressure: pTotal.toFixed(2),
@@ -167,11 +203,10 @@ export const CalculationForm = () => {
         powerConsumption: n0.toFixed(2),
         minDrivePower: nMin.toFixed(2),
         totalResistance: zTotal.toFixed(2),
-        
-        // Дополнительные параметры
         averageTemp: tAvg.toFixed(1),
         sprinklerEfficiency: a0,
-        resistanceCoefficient: m.toFixed(2)
+        resistanceCoefficient: m.toFixed(2),
+        city: values.city // Добавляем город в результаты
       });
     }
   }, [
@@ -179,19 +214,20 @@ export const CalculationForm = () => {
     humidity, temperature_dry, a0, m, kor, hor,
     zso, zvu, zok, etaK, etaP, qx, gg, gi, gy,
     gp, gd, lambda, area, L, pStatic, pDynamic,
-    pTotal, gv, wven, wgr, n0, nMin, zTotal, tAvg
+    pTotal, gv, wven, wgr, n0, nMin, zTotal, tAvg,
+    values.city
   ]);
 
   return (
     <div className="container">
       <form onSubmit={formik.handleSubmit}>
         <h2 className="mb-2 text-light text-center">Теплотехнический расчёт градирни</h2>
+        
         <div className="row">
           <div className="col">
             <InitialDataSection formik={formik} />
           </div>
           <div className="col">
-            {/* <h2 className="mb-2 text-light text-center">Заказчик:</h2> */}
             <CalculationForInitialDataSection  
               formik={formik} 
               autoResults={autoResults} 
