@@ -1,11 +1,34 @@
 import { PHYSICS, DEFAULTS } from './constants';
 
+// Вспомогательные функции для графика
+const calculateGA = (t, baseGA, t1, t2) => {
+  if (t1 === t2) return baseGA;
+  return baseGA * (1 - 0.05 * (t - t1) / (t2 - t1));
+};
+
+const calculatePst = (t, basePst, t1, t2) => {
+  if (t1 === t2) return basePst;
+  return basePst * (1 - 0.03 * (t - t1) / (t2 - t1));
+};
+
+const generateChartData = (g1, t1, t2, basePst) => {
+  const data = [];
+  const tempStep = 0.2;
+  const startTemp = Math.min(t1, t2);
+  const endTemp = Math.max(t1, t2);
+  
+  for (let x = startTemp; x <= endTemp; x += tempStep) {
+    data.push({
+      x: parseFloat(x.toFixed(2)),
+      ga: parseFloat(calculateGA(x, g1, t1, t2).toFixed(2)),
+      pst: parseFloat(calculatePst(x, basePst, t1, t2).toFixed(2))
+    });
+  }
+  return data;
+};
+
 /**
  * Расчёт плотности орошения (qж)
- * @param {number} g1 - Производительность градирни (м³/ч)
- * @param {number} [area=DEFAULTS.TOWER_AREA] - Площадь орошения (м²)
- * @returns {number} Плотность орошения (м³/(м²·ч))
- * @throws {Error} Если площадь орошения ≤ 0
  */
 export const calcGx = (g1, area = DEFAULTS.TOWER_AREA) => {
   if (!g1 || g1 <= 0) return 0;
@@ -15,10 +38,6 @@ export const calcGx = (g1, area = DEFAULTS.TOWER_AREA) => {
 
 /**
  * Расчёт производительности одной секции (Gж)
- * @param {number} g1 - Производительность градирни (м³/ч)
- * @param {number} n - Количество секций
- * @returns {number} Производительность секции (м³/ч)
- * @throws {Error} Если количество секций ≤ 0
  */
 export const calcGg = (g1, n) => {
   if (!g1 || g1 <= 0) return 0;
@@ -28,11 +47,6 @@ export const calcGg = (g1, n) => {
 
 /**
  * Расчёт тепловой мощности (Q)
- * @param {number} g1 - Производительность градирни (м³/ч)
- * @param {number} t1 - Температура входящей воды (°C)
- * @param {number} t2 - Температура охлаждённой воды (°C)
- * @returns {number} Тепловая мощность (МВт)
- * @throws {Error} Если t1 ≤ t2
  */
 export const calcQ = (g1, t1, t2) => {
   if (!g1 || g1 <= 0) return 0;
@@ -43,8 +57,6 @@ export const calcQ = (g1, t1, t2) => {
 
 /**
  * Расчёт капельного уноса (Gy)
- * @param {number} g1 - Производительность градирни (м³/ч)
- * @returns {number} Капельный унос (м³/ч)
  */
 export const calcGy = (g1) => {
   if (!g1 || g1 <= 0) return 0;
@@ -53,10 +65,6 @@ export const calcGy = (g1) => {
 
 /**
  * Расчёт потерь на испарение (Gi)
- * @param {number} gg - Производительность секции (м³/ч)
- * @param {number} t1 - Температура входящей воды (°C)
- * @param {number} t2 - Температура охлаждённой воды (°C)
- * @returns {number} Потери на испарение (м³/ч)
  */
 export const calcGi = (gg, t1, t2) => {
   if (!gg || gg <= 0) return 0;
@@ -66,9 +74,6 @@ export const calcGi = (gg, t1, t2) => {
 
 /**
  * Расчёт соотношения воздух/вода (λ)
- * @param {number} g1 - Производительность градирни (м³/ч)
- * @param {number} n - Количество секций
- * @returns {number} Безразмерное соотношение
  */
 export const calcLambda = (g1, n) => {
   if (!g1 || g1 <= 0 || !n || n <= 0) return 0;
@@ -77,7 +82,6 @@ export const calcLambda = (g1, n) => {
 
 /**
  * Расчет температуры по влажному термометру
- * (упрощенная формула, может быть заменена на более точную)
  */
 export const calcWetBulbTemp = (dryTemp, humidity) => {
   return dryTemp - (100 - humidity) / 5;
@@ -85,14 +89,6 @@ export const calcWetBulbTemp = (dryTemp, humidity) => {
 
 /**
  * Расчёт суммарного коэффициента сопротивления
- * @param {number} zso - Коэф. сопротивления оросителя
- * @param {number} zvu - Коэф. сопротивления водоуловителя
- * @param {number} zok - Коэф. сопротивления окон
- * @param {number} hor - Высота слоя оросителя (м)
- * @param {number} kor - Коэффициент орошения
- * @param {number} qx - Плотность орошения
- * @param {number} L - Длина воздухораспределителя
- * @returns {number} Суммарный коэффициент сопротивления
  */
 export const calcTotalResistance = (zso, zvu, zok, hor, kor, qx, L) => {
   return zok + hor * (zso + kor * qx) + 0.1 * L + zvu;
@@ -100,20 +96,13 @@ export const calcTotalResistance = (zso, zvu, zok, hor, kor, qx, L) => {
 
 /**
  * Расчёт статического напора вентилятора
- * @param {number} wgr - Скорость воздуха в градирне (м/с)
- * @param {number} g1 - Плотность ПВС (кг/м³)
- * @param {number} z - Суммарный коэф. сопротивления
- * @returns {number} Статический напор (Па)
  */
 export const calcStaticPressure = (wgr, g1, z) => {
-  return (Math.pow(wgr, 2) * g1 * z / 2);
+  return (Math.pow(wgr, 2) * g1 * z) / 2;
 };
 
 /**
  * Расчёт динамического напора вентилятора
- * @param {number} wven - Скорость воздуха в корпусе вентилятора (м/с)
- * @param {number} g1 - Плотность ПВС (кг/м³)
- * @returns {number} Динамический напор (Па)
  */
 export const calcDynamicPressure = (wven, g1) => {
   return (Math.pow(wven, 2) * g1) / 2;
@@ -121,9 +110,6 @@ export const calcDynamicPressure = (wven, g1) => {
 
 /**
  * Расчёт полного напора вентилятора
- * @param {number} pStatic - Статический напор (Па)
- * @param {number} pDynamic - Динамический напор (Па)
- * @returns {number} Полный напор (Па)
  */
 export const calcTotalPressure = (pStatic, pDynamic) => {
   return pStatic + pDynamic;
@@ -131,10 +117,6 @@ export const calcTotalPressure = (pStatic, pDynamic) => {
 
 /**
  * Расчёт производительности вентиляторной установки
- * @param {number} gj - Производительность секции (м³/ч)
- * @param {number} lambda - Относительный расход
- * @param {number} g1 - Плотность ПВС (кг/м³)
- * @returns {number} Производительность (м³/ч)
  */
 export const calcFanPerformance = (gj, lambda, g1) => {
   return gj * lambda * (PHYSICS.WATER_DENSITY / g1);
@@ -142,12 +124,6 @@ export const calcFanPerformance = (gj, lambda, g1) => {
 
 /**
  * Расчёт потребляемой мощности
- * @param {number} gv - Производительность вентустановки (м³/ч)
- * @param {number} pTotal - Полный напор (Па)
- * @param {number} g1 - Плотность ПВС (кг/м³)
- * @param {number} etaK - КПД рабочего колеса
- * @param {number} tAvg - Средняя температура (°C)
- * @returns {number} Потребляемая мощность (кВт)
  */
 export const calcPowerConsumption = (gv, pTotal, g1, etaK, tAvg) => {
   return (gv * pTotal) / (1.3 * Math.pow(10, 4) * g1 * etaK * (tAvg + 273));
@@ -155,9 +131,6 @@ export const calcPowerConsumption = (gv, pTotal, g1, etaK, tAvg) => {
 
 /**
  * Расчёт минимальной мощности привода
- * @param {number} n0 - Потребляемая мощность (кВт)
- * @param {number} etaP - КПД привода
- * @returns {number} Минимальная мощность (кВт)
  */
 export const calcMinDrivePower = (n0, etaP) => {
   return n0 / etaP;
@@ -165,12 +138,6 @@ export const calcMinDrivePower = (n0, etaP) => {
 
 /**
  * Основная функция расчёта всех параметров
- * @param {Object} values - Входные параметры
- * @param {Object} values.initialData - { g1, n, t1, t2 }
- * @param {Object} values.airParameters - { humidity, temperature_dry, barometric_press }
- * @param {Object} values.towerParameters - { width, length }
- * @returns {Object} Результаты в формате { "Параметр": "значение с единицами" }
- * @throws {Error} При некорректных входных данных
  */
 export const getCalculationResults = (values) => {
   if (!values) throw new Error("Отсутствуют входные данные");
@@ -191,10 +158,10 @@ export const getCalculationResults = (values) => {
     const tAvg = (t1 + t2) / 2;
 
     // Расчет потерь воды
-    const gi = calcGi(gg, t1, t2); // Потери на испарение
-    const gy = calcGy(g1); // Капельный унос
-    const gp = (gi / 4 - gy).toFixed(2); // Потери на продувку
-    const gd = (parseFloat(gi) + parseFloat(gy) + parseFloat(gp)).toFixed(2); // Макс. расход подпиточной воды
+    const gi = calcGi(gg, t1, t2);
+    const gy = calcGy(g1);
+    const gp = (gi / 4 - gy).toFixed(2);
+    const gd = (parseFloat(gi) + parseFloat(gy) + parseFloat(gp)).toFixed(2);
     
     // Расчеты для вентиляторной установки
     const zTotal = calcTotalResistance(zso, zvu, zok, hor, kor, qx, L);
@@ -208,6 +175,9 @@ export const getCalculationResults = (values) => {
     const pTotal = calcTotalPressure(pStatic, pDynamic);
     const n0 = calcPowerConsumption(gv, pTotal, PHYSICS.WATER_DENSITY, etaK, tAvg);
     const nMin = calcMinDrivePower(n0, etaP);
+
+    // Генерация данных для графика
+    const chartData = generateChartData(g1, t1, t2, pStatic);
     
     return {
       // Основные параметры
@@ -239,7 +209,10 @@ export const getCalculationResults = (values) => {
       
       // Дополнительные параметры
       "Температура по влажному термометру": `${calcWetBulbTemp(temperature_dry, humidity).toFixed(1)} °C`,
-      "Средняя температура воды": `${tAvg.toFixed(1)} °C`
+      "Средняя температура воды": `${tAvg.toFixed(1)} °C`,
+
+      // Данные для графика
+      chartData
     };
   } catch (error) {
     console.error("Ошибка расчётов:", error);

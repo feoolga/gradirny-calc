@@ -1,8 +1,54 @@
 import { useLocation } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export const ResultsTable = () => {
   const location = useLocation();
   const results = location.state?.results || {};
+
+  // Подготовка данных для графика
+  // const prepareChartData = () => {
+  //   if (results.chartData) {
+  //     return results.chartData.map(item => ({
+  //       x: parseFloat(item.x),
+  //       ga: parseFloat(item.ga),
+  //       pst: parseFloat(item.pst)
+  //     }));
+  //   }
+    
+  //   return [
+  //     { x: 28.00, ga: 600.22, pst: 18.15 },
+  //     { x: 28.20, ga: 678.06, pst: 181.56 },
+  //     { x: 28.40, ga: 665.79, pst: 175.06 },
+  //     { x: 28.60, ga: 653.69, pst: 168.76 },
+  //     { x: 28.80, ga: 641.67, pst: 162.60 }
+  //   ].map(item => ({
+  //     x: item.x,
+  //     ga: parseFloat(results['Производительность градирни']?.split(' ')[0]) || item.ga,
+  //     pst: parseFloat(results['Статический напор']?.split(' ')[0]) || item.pst
+  //   }));
+  // };
+
+  const chartData = results.chartData || [];
+  // const hasValidChartData = chartData && chartData.length > 0;
+
+  // Стили для текста
+  const textStyles = {
+    whiteText: {
+      color: 'white',
+      fontWeight: 'bold'
+    },
+    blueText: {
+      color: '#1a237e', // Темно-синий
+      fontWeight: 'normal'
+    },
+    axisLabel: {
+      fill: 'white', // Белый цвет для подписей осей
+      fontSize: 12
+    },
+    axisTick: {
+      fill: 'white' // Белый цвет для значений на осях
+    }
+  };
   
   // Группировка параметров с русскими ключами
   const parameterGroups = {
@@ -50,15 +96,14 @@ export const ResultsTable = () => {
       group.items.some(item => results[item.key] !== undefined)
     );
 
-  return (
-    <div className="container mt-4">
-      <h2 className="mb-4 text-center">Результаты расчёта градирни</h2>
-      
-      {Object.keys(results).length === 0 ? (
-        <div className="alert alert-danger">
-          Нет данных для отображения. Проверьте расчеты.
-        </div>
-      ) : (
+    return (
+      <div className="container mt-4">
+        <h2 className="mb-4 text-center">Результаты расчёта градирни</h2>
+        
+        {Object.keys(results).length === 0 ? (
+          <div className="alert alert-danger">Нет данных для отображения</div>
+        ) : (
+          <>
         <div className="row">
           {nonEmptyGroups.map(([groupKey, group]) => (
             <div key={groupKey} className="col-md-6 mb-4">
@@ -82,6 +127,79 @@ export const ResultsTable = () => {
             </div>
           ))}
         </div>
+
+        {/* График */}
+        {chartData.length > 0 && (
+            <div className="mt-5">
+              <h4 className="mb-3" >
+                График зависимости расхода воздуха и давления
+              </h4>
+              <div style={{ height: 400 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#b0bec5" />
+                    <XAxis 
+                      dataKey="x" 
+                      label={{ 
+                        value: 'Параметр X', 
+                        position: 'insideBottomRight', 
+                        offset: -5,
+                        style: textStyles.axisLabel
+                      }} 
+                      tick={{ fill: '#1a237e' }}
+                    />
+                    <YAxis 
+                      yAxisId="left" 
+                      label={{ 
+                        value: 'G_A (м³/ч)', 
+                        angle: -90, 
+                        position: 'insideLeft',
+                        style: textStyles.axisLabel
+                      }} 
+                      tick={{ fill: '#1a237e' }}
+                    />
+                    <YAxis 
+                      yAxisId="right" 
+                      orientation="right" 
+                      label={{ 
+                        value: 'Pst (Па)', 
+                        angle: -90, 
+                        position: 'insideRight',
+                        style: textStyles.axisLabel
+                      }} 
+                      tick={{ fill: '#1a237e' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: '#1a237e',
+                        borderColor: '#1a237e'
+                      }}
+                      itemStyle={textStyles.whiteText}
+                      labelStyle={textStyles.whiteText}
+                    />
+                    <Legend 
+                      wrapperStyle={textStyles.blueText}
+                    />
+                    <Line 
+                      yAxisId="left" 
+                      dataKey="ga" 
+                      stroke="#ffffff"  // Оранжевый
+                      name="Расход воздуха (G_A)" 
+                      dot={{ r: 4, fill: '#1a237e' }} 
+                    />
+                    <Line 
+                      yAxisId="right" 
+                      dataKey="pst" 
+                      stroke="#ffffff"  // Зеленый
+                      name="Статическое давление (Pst)" 
+                      dot={{ r: 4, fill: '#1a237e' }} 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
