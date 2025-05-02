@@ -183,14 +183,14 @@ export const ResultsTable = () => {
                     <Line 
                       yAxisId="left" 
                       dataKey="ga" 
-                      stroke="#ffffff"  // Оранжевый
+                      stroke="#FFE4B5"  // Оранжевый
                       name="Расход воздуха (G_A)" 
                       dot={{ r: 4, fill: '#1a237e' }} 
                     />
                     <Line 
                       yAxisId="right" 
                       dataKey="pst" 
-                      stroke="#ffffff"  // Зеленый
+                      stroke="#7FFFD4"  // Зеленый
                       name="Статическое давление (Pst)" 
                       dot={{ r: 4, fill: '#1a237e' }} 
                     />
