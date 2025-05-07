@@ -49,10 +49,14 @@ export const calcGg = (g1, n) => {
  * Расчёт тепловой мощности (Q)
  */
 export const calcQ = (g1, t1, t2) => {
-  if (!g1 || g1 <= 0) return 0;
-  if (t1 == null || t2 == null) return 0;
-  if (t1 <= t2) throw new Error("t1 должна быть > t2");
-  return (g1 * PHYSICS.WATER_HEAT_CAPACITY * (t1 - t2)) / 3600;
+  // Добавляем проверку на существование значений
+  if (typeof t1 !== 'number' || typeof t2 !== 'number') return 0;
+  
+  // Добавляем временную защиту от некорректных значений
+  if (t1 <= t2) return 0;
+  
+  // Остальная логика расчета
+  return g1 * (t1 - t2) * 4.187;
 };
 
 /**

@@ -22,6 +22,8 @@ const validationSchema = Yup.object({
     t1: Yup.number().required("Обязательное поле").min(0, "Минимум 0°C").max(100, "Максимум 100°C"),
     t2: Yup.number().required("Обязательное поле").min(0, "Минимум 0°C").max(100, "Максимум 100°C")
       .test('t2-less-t1', 't₂ должна быть меньше t₁', function(value) {
+        // Проверяем только если оба поля заполнены
+        if (!value || !this.parent.t1) return true;
         return value < this.parent.t1;
       }),
   }),
