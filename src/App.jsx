@@ -1,6 +1,6 @@
 import React from 'react';
 import { CalculationForm } from './components/CalculationForm';
-import { ResultsTable } from './components/ResultsTable';
+import { ResultsPage } from './components/ResultsPage';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 
@@ -10,7 +10,7 @@ function App() {
       <BrowserRouter basename="/gradirny-calc">
         <Routes>
           <Route path="/" element={<CalculationForm />} />
-          <Route path="/results-table" element={<ResultsTable />} />
+          <Route path="/results-page" element={<ResultsPage />} />
         </Routes>
       </BrowserRouter>
     </div>

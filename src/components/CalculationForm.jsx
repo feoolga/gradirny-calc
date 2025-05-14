@@ -113,7 +113,7 @@ export const CalculationForm = () => {
     validationSchema,
     onSubmit: (values) => {
       const results = calculations.getCalculationResults(values);
-      navigate('/results-table', { state: { results } });
+      navigate('/results-page', { state: { results } });
     },
   });
 
