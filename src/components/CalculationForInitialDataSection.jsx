@@ -1,27 +1,36 @@
 import { ResultField } from "./ResultField";
 import { Section } from "./Section";
 
-export const CalculationForInitialDataSection = ({ formik, autoResults }) => (
-  <Section title="Расчётные параметры по исходным данным">
-    <ResultField
-      label="Производительность секции (Gж)"
-      value={autoResults.gg}
-      unit="м³/ч"
-    />
-    <ResultField
-      label="Плотность орошения (qж)"
-      value={autoResults.gx}
-      unit="м³/м²·ч"
-    />
-    <ResultField
-      label="Мощность теплосъема (Q)"
-      value={autoResults.q}
-      unit="МВт"
-    />
-    <ResultField
-      label="Соотношение воздуха и воды (λ)"
-      value={autoResults.lambda || "Расчётное"} // Добавлено новое поле
-      unit="≥600"
-    />
-  </Section>
-);
+// CalculationForInitialDataSection.jsx
+export const CalculationForInitialDataSection = ({ results }) => {
+  if (!results) return null;
+  
+  return (
+    <Section title="Расчётные параметры по исходным данным">
+      {/* <ResultField
+        label="Производительность градирни"
+        value={results["Производительность градирни"]}
+      /> */}
+      <ResultField
+        label="Производительность секции"
+        value={results["Производительность секции"]}
+      />
+      <ResultField
+        label="Плотность орошения"
+        value={results["Плотность орошения"]}
+      />
+      <ResultField
+        label="Средняя температура воды"
+        value={results["Средняя температура воды"]}
+      />
+      <ResultField
+        label="Мощность"
+        value={results["Тепловая мощность"]}
+      />
+      <ResultField
+        label="Соотношение воды и воздуха"
+        value={results["Соотношение воздух/вода"]}
+      />
+    </Section>
+  );
+};

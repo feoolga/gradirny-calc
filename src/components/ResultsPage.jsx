@@ -1,5 +1,10 @@
 import { useLocation } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useFormik } from 'formik';
+import { CalculationForInitialDataSection } from "./CalculationForInitialDataSection";
+import { CalculationForTowerParametersSection } from "./CalculationForTowerParametersSection";
+import { CalculationForParametersOutdoorAirSection } from "./CalculationForParametersOutdoorAirSection";
+import { FanSystemResultsSection } from "./FanSystemResultsSection";
 
 export const ResultsPage = () => {
   const location = useLocation();
@@ -74,108 +79,142 @@ export const ResultsPage = () => {
     );
 
     return (
-      <div className="container mt-4">
+      <div className="container">
         <h2 className="mb-4 text-center">Результаты расчёта градирни</h2>
         
         {Object.keys(results).length === 0 ? (
           <div className="alert alert-danger">Нет данных для отображения</div>
         ) : (
           <>
+
         <div className="row">
-          {nonEmptyGroups.map(([groupKey, group]) => (
-            <div key={groupKey} className="col-md-6 mb-4">
-              <div className="card h-100">
-                <div className="card-header bg-primary text-white">
-                  <h5 className="mb-0">{group.title}</h5>
-                </div>
-                <div className="card-body">
-                  <ul className="list-group list-group-flush">
-                    {group.items.map(item => (
-                      <li key={item.key} className="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{item.label}</span>
-                        <span className="badge bg-dark rounded-pill">
-                          {results[item.key]}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          ))}
+          <div className="col">
+            <CalculationForInitialDataSection 
+              results={results.performance} 
+            />
+          </div>
+          <div className="col">
+            <CalculationForTowerParametersSection 
+              results={{
+                geometry: results.geometry,
+                sprinkler: results.sprinkler
+              }} 
+            />
+          </div>
+        </div>
+
+        <div className="row">
+          <div className="col">
+            <CalculationForParametersOutdoorAirSection  
+              results={results.temperatures} 
+            />
+          </div>
+          <div className="col">
+            <FanSystemResultsSection 
+              results={results.fanSystem} 
+            />
+          </div>
         </div>
 
         {/* График */}
-        {chartData.length > 0 && (
-            <div className="mt-5">
-              <h4 className="mb-3" >
-                График зависимости расхода воздуха и давления
-              </h4>
-              <div style={{ height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#b0bec5" />
-                    <XAxis 
-                      dataKey="x" 
-                      label={{ 
-                        value: 'Параметр X', 
-                        position: 'insideBottomRight', 
-                        offset: -5,
-                        style: textStyles.axisLabel
-                      }} 
-                      tick={{ fill: '#1a237e' }}
-                    />
-                    <YAxis 
-                      yAxisId="left" 
-                      label={{ 
-                        value: 'G_A (м³/ч)', 
-                        angle: -90, 
-                        position: 'insideLeft',
-                        style: textStyles.axisLabel
-                      }} 
-                      tick={{ fill: '#1a237e' }}
-                    />
-                    <YAxis 
-                      yAxisId="right" 
-                      orientation="right" 
-                      label={{ 
-                        value: 'Pst (Па)', 
-                        angle: -90, 
-                        position: 'insideRight',
-                        style: textStyles.axisLabel
-                      }} 
-                      tick={{ fill: '#1a237e' }}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: '#1a237e',
-                        borderColor: '#1a237e'
-                      }}
-                      itemStyle={textStyles.whiteText}
-                      labelStyle={textStyles.whiteText}
-                    />
-                    <Legend 
-                      wrapperStyle={textStyles.blueText}
-                    />
-                    <Line 
-                      yAxisId="left" 
-                      dataKey="ga" 
-                      stroke="#FFE4B5"  // Оранжевый
-                      name="Расход воздуха (G_A)" 
-                      dot={{ r: 4, fill: '#1a237e' }} 
-                    />
-                    <Line 
-                      yAxisId="right" 
-                      dataKey="pst" 
-                      stroke="#7FFFD4"  // Зеленый
-                      name="Статическое давление (Pst)" 
-                      dot={{ r: 4, fill: '#1a237e' }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
+        {results.charts?.["График зависимости"]?.length > 0 && (
+  <div className="bg-white p-3 rounded shadow-sm"> {/* Белый фон контейнера */}
+    <h4 className="mb-3 text-dark"> {/* Тёмный текст заголовка */}
+      График зависимости расхода воздуха и давления
+    </h4>
+    <div style={{ height: 400 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart 
+          data={results.charts["График зависимости"]}
+          margin={{ top: 20, right: 30, left: 40, bottom: 30 }}
+        >
+          <CartesianGrid 
+            strokeDasharray="3 3" 
+            stroke="#e0e0e0"
+            strokeOpacity={0.7}
+          />
+          
+          <XAxis 
+            dataKey="x"
+            label={{ 
+              value: 'Температура (°C)', 
+              position: 'insideBottomRight',
+              offset: -5,
+              style: { fill: '#424242', fontSize: 12 }
+            }}
+            tick={{ fill: '#424242', fontSize: 12 }}
+            axisLine={{ stroke: '#424242' }}
+          />
+          
+          <YAxis 
+            yAxisId="left"
+            label={{
+              value: 'Расход воздуха (м³/ч)',
+              angle: -90,
+              position: 'insideLeft',
+              style: { fill: '#424242', fontSize: 12 }
+            }}
+            tick={{ fill: '#424242', fontSize: 12 }}
+            axisLine={{ stroke: '#424242' }}
+          />
+          
+          <YAxis 
+            yAxisId="right"
+            orientation="right"
+            label={{
+              value: 'Давление (Па)',
+              angle: -90,
+              position: 'insideRight',
+              style: { fill: '#424242', fontSize: 12 }
+            }}
+            tick={{ fill: '#424242', fontSize: 12 }}
+            axisLine={{ stroke: '#424242' }}
+          />
+          
+          <Tooltip
+            contentStyle={{
+              backgroundColor: '#ffffff',
+              borderColor: '#e0e0e0',
+              color: '#424242',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+            formatter={(value, name) => [
+              `${value} ${name.includes('Расход') ? 'м³/ч' : 'Па'}`,
+              name
+            ]}
+            labelFormatter={(label) => `Температура: ${label} °C`}
+          />
+          
+          <Legend 
+            wrapperStyle={{ color: '#424242' }}
+          />
+          
+          <Line
+            yAxisId="left"
+            dataKey="ga"
+            name="Расход воздуха"
+            stroke="#1976d2"
+            dot={false}
+            strokeWidth={2}
+            type="monotone"  // Плавная кривая
+            activeDot={{ r: 6, fill: '#1976d2' }}
+          />
+          
+          <Line
+            yAxisId="right"
+            dataKey="pst"
+            name="Статическое давление"
+            stroke="#d32f2f"
+            dot={false}
+            strokeWidth={2}
+            type="monotone"  // Плавная кривая
+            activeDot={{ r: 6, fill: '#d32f2f' }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+)}
         </>
       )}
     </div>

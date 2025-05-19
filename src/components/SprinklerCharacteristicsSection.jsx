@@ -3,9 +3,17 @@ import { Section } from "./Section";
 
 export const SprinklerCharacteristicsSection = ({ formik }) => (
   <Section title="Характеристики оросителя и параметры системы">
-    {/* <div className="row">
-      <div className="col"> */}
-        <h6 className="text-center">Характеристики оросителя</h6>
+      <h6 className="text-center">Характеристики оросителя</h6>
+      <div className="mb-3">
+        <label className="form-label">Название оросителя и водоуловителя</label>
+        <input
+          type="text"
+          className="form-control form-control-sm"
+          value={formik.values.sprinklerName || ''}
+          onChange={(e) => formik.setFieldValue('sprinklerName', e.target.value)}
+          placeholder="Введите название"
+        />
+      </div>
         <InputField
           label="A₀ (коэффициент оросителя)"
           name="sprinklerCharacteristics.a0"
@@ -24,10 +32,7 @@ export const SprinklerCharacteristicsSection = ({ formik }) => (
           formik={formik}
           unit="м·ч/м³"
         />
-      {/* </div>
-      
-      <div className="col"> */}
-        <h6 className="text-center">Коэффициенты сопротивления</h6>
+      <h6 className="text-center">Коэффициенты сопротивления</h6>
         <InputField
           label="Оросителя (zсо)"
           name="resistanceCoefficients.zso"
@@ -46,10 +51,7 @@ export const SprinklerCharacteristicsSection = ({ formik }) => (
           formik={formik}
           unit=""
         />
-      {/* </div>
-      
-      <div className="col"> */}
-        <h6 className="text-center">КПД системы</h6>
+      <h6 className="text-center">КПД системы</h6>
         <InputField
           label="Рабочего колеса (ηк)"
           name="efficiency.etaK"
@@ -68,7 +70,5 @@ export const SprinklerCharacteristicsSection = ({ formik }) => (
           formik={formik}
           unit="м"
         />
-      {/* </div>
-    </div> */}
   </Section>
 );

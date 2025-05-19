@@ -6,12 +6,8 @@ import { InitialDataSection } from "./InitialDataSection";
 import { TowerParametersSection } from "./TowerParametersSection";
 import { ParametersOutdoorAirSection } from "./ParametersOutdoorAirSection";
 import { SprinklerCharacteristicsSection } from "./SprinklerCharacteristicsSection";
-import { CalculationForInitialDataSection } from "./CalculationForInitialDataSection";
-import { CalculationForTowerParametersSection } from "./CalculationForTowerParametersSection";
-import { CalculationForParametersOutdoorAirSection } from "./CalculationForParametersOutdoorAirSection";
-import { FanSystemResultsSection } from "./FanSystemResultsSection";
 import { useNavigate } from 'react-router-dom';
-import { calculations } from '../utils/calculations';
+import calculations from '../utils/calculations';
 import { PHYSICS } from '../utils/constants';
 
 const validationSchema = Yup.object({
@@ -220,6 +216,8 @@ export const CalculationForm = () => {
     values.city
   ]);
 
+  console.log('Available functions:', Object.keys(calculations));
+
   return (
     <div className="container">
       <form onSubmit={formik.handleSubmit}>
@@ -228,48 +226,11 @@ export const CalculationForm = () => {
         <div className="row">
           <div className="col">
             <InitialDataSection formik={formik} />
-          </div>
-          <div className="col">
-            <CalculationForInitialDataSection  
-              formik={formik} 
-              autoResults={autoResults} 
-            />
-          </div>
-        </div>
-
-        <div className="row">
-          <div className="col">
             <TowerParametersSection formik={formik} />
-          </div>
-          <div className="col">
-            <CalculationForTowerParametersSection 
-              formik={formik} 
-              autoResults={autoResults} 
-            />
-          </div>
-        </div>
-
-        <div className="row">
-          <div className="col">
             <ParametersOutdoorAirSection formik={formik} />
           </div>
           <div className="col">
-            <CalculationForParametersOutdoorAirSection 
-              formik={formik} 
-              autoResults={autoResults} 
-            />
-          </div>
-        </div>
-
-        <div className="row">
-          <div className="col">
             <SprinklerCharacteristicsSection formik={formik} />
-          </div>
-          <div className="col">
-            <FanSystemResultsSection 
-              formik={formik} 
-              autoResults={autoResults} 
-            />
           </div>
         </div>
 
