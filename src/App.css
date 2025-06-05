@@ -4,3 +4,25 @@
   margin: 0 auto;
   padding: 20px;
 }
+
+.custom-outline-primary {
+  background-color: #d4e6ff !important;
+  border-color: #86b7fe !important;
+  color: #0d6efd;
+}
+
+.custom-outline-primary:hover {
+  /* Оставляем стандартный hover из Bootstrap */
+  background-color: transparent !important;
+}
+
+.custom-outline-success {
+  background-color: #d4fff0 !important;
+  border-color: #6be0c6 !important;
+  color: #09b766;
+}
+
+.custom-outline-success:hover {
+  /* Оставляем стандартный hover из Bootstrap */
+  background-color: transparent !important;
+}

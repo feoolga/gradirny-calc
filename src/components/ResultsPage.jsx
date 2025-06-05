@@ -5,6 +5,7 @@ import { CalculationForInitialDataSection } from "./CalculationForInitialDataSec
 import { CalculationForTowerParametersSection } from "./CalculationForTowerParametersSection";
 import { CalculationForParametersOutdoorAirSection } from "./CalculationForParametersOutdoorAirSection";
 import { FanSystemResultsSection } from "./FanSystemResultsSection";
+import ExportControls from './ExportControls';
 
 export const ResultsPage = () => {
   const location = useLocation();
@@ -81,6 +82,8 @@ export const ResultsPage = () => {
     return (
       <div className="container">
         <h2 className="mb-4 text-center">Результаты расчёта градирни</h2>
+
+        <ExportControls results={results} />
         
         {Object.keys(results).length === 0 ? (
           <div className="alert alert-danger">Нет данных для отображения</div>
