@@ -12,6 +12,7 @@ import { PHYSICS } from '../utils/constants';
 
 const validationSchema = Yup.object({
   city: Yup.string().required('Укажите город'),
+  sprinklerName: Yup.string().required('Выберите модель оросителя'),
   initialData: Yup.object({
     g1: Yup.number().required("Обязательное поле").min(1000, "Минимум 1000 м³/ч"),
     n: Yup.number().required("Обязательное поле").min(1, "Минимум 1 секция").integer("Должно быть целым числом"),

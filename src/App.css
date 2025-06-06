@@ -26,3 +26,14 @@
   /* Оставляем стандартный hover из Bootstrap */
   background-color: transparent !important;
 }
+
+.custom-outline-secondary {
+  background-color: #fffed4 !important;
+  border-color: #c3aa8a !important;
+  color: #5f5b53;
+}
+
+.custom-outline-secondary:hover {
+  /* Оставляем стандартный hover из Bootstrap */
+  background-color: transparent !important;
+}

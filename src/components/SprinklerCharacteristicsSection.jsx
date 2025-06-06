@@ -1,18 +1,35 @@
 import { InputField } from "./InputField";
 import { Section } from "./Section";
+import { SPRINKLER_TYPES } from '../utils/constants';
 
-export const SprinklerCharacteristicsSection = ({ formik }) => (
+export const SprinklerCharacteristicsSection = ({ formik }) => {
+  const handleSprinklerChange = (e) => {
+    const selectedType = e.target.value;
+    formik.setFieldValue('sprinklerName', selectedType);
+    
+    if (selectedType && SPRINKLER_TYPES[selectedType]) {
+      const params = SPRINKLER_TYPES[selectedType];
+      formik.setFieldValue('sprinklerCharacteristics.a0', params.a0);
+      formik.setFieldValue('sprinklerCharacteristics.m', params.m);
+      formik.setFieldValue('sprinklerCharacteristics.hor', params.hor);
+      formik.setFieldValue('sprinklerCharacteristics.kor', params.kor);
+    }
+  };
+  return (
   <Section title="Характеристики оросителя и параметры системы">
       <h6 className="text-center">Характеристики оросителя</h6>
       <div className="mb-3">
-        <label className="form-label">Название оросителя и водоуловителя</label>
-        <input
-          type="text"
-          className="form-control form-control-sm"
+        <label className="form-label">Модель оросителя</label>
+        <select
+          className="form-select form-select-sm"
           value={formik.values.sprinklerName || ''}
-          onChange={(e) => formik.setFieldValue('sprinklerName', e.target.value)}
-          placeholder="Введите название"
-        />
+          onChange={handleSprinklerChange}
+        >
+          <option value="">Выберите модель</option>
+          {Object.keys(SPRINKLER_TYPES).map(type => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
       </div>
         <InputField
           label="A₀ (коэффициент оросителя)"
@@ -71,4 +88,5 @@ export const SprinklerCharacteristicsSection = ({ formik }) => (
           unit="м"
         />
   </Section>
-);
+  );
+};
