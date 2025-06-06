@@ -239,10 +239,16 @@ export const CalculationForm = () => {
           type="submit" 
           variant="primary" 
           className="my-2"
-          disabled={!formik.isValid || formik.isSubmitting}
+          disabled={!formik.isValid || formik.isSubmitting || !formik.values.sprinklerName}
         >
           {formik.isSubmitting ? 'Вычисляем...' : 'Рассчитать'}
         </Button>
+
+        {!formik.values.sprinklerName && (
+          <span className="text-warning mt-1 ms-3">
+            ⚠️ Выберите модель оросителя
+          </span>
+        )}
       </form>
     </div>
   );
