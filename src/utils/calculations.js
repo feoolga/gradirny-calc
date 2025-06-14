@@ -16,7 +16,7 @@ import { PHYSICS, DEFAULTS } from './constants';
  * @param {number} t2 - Конечная температура воды
  * @returns {number} Расход воздуха при температуре t
  */
-const calculateGA = (t, baseGA, t1, t2) => {
+export const calculateGA = (t, baseGA, t1, t2) => {
   if (t1 === t2) return baseGA;
   const tempRatio = (t - t1) / (t2 - t1);
   return baseGA * (1 - 0.05 * tempRatio);
@@ -69,7 +69,7 @@ const generateChartData = (g1, t1, t2, basePst) => {
  * @returns {number} Плотность орошения
  * @throws {Error} Если площадь <= 0
  */
-const calcGx = (g1, area = DEFAULTS.TOWER_AREA) => {
+export const calcGx = (g1, area = DEFAULTS.TOWER_AREA) => {
   if (!g1 || g1 <= 0) return 0;
   if (area <= 0) throw new Error("Площадь орошения должна быть > 0");
   return g1 / area;
@@ -82,7 +82,7 @@ const calcGx = (g1, area = DEFAULTS.TOWER_AREA) => {
  * @returns {number} Производительность секции
  * @throws {Error} Если количество секций <= 0
  */
-const calcGg = (g1, n) => {
+export const calcGg = (g1, n) => {
   if (!g1 || g1 <= 0) return 0;
   if (n <= 0) throw new Error("Количество секций должно быть > 0");
   return g1 / n;
@@ -188,7 +188,7 @@ const calcTotalPressure = (pStatic, pDynamic) => {
  * @param {number} density - Плотность воды [кг/м³]
  * @returns {number} Производительность вентилятора
  */
-const calcFanPerformance = (gj, lambda, density) => {
+export const calcFanPerformance = (gj, lambda, density) => {
   return gj * lambda * (PHYSICS.WATER_DENSITY / density);
 };
 

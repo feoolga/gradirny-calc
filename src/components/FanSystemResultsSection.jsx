@@ -10,47 +10,47 @@ export const FanSystemResultsSection = ({ results }) => {
       <ResultField
         label="Статический напор (Pс)"
         value={results["Статическое давление"] ?? "Расчётное"}
-        unit="Па"
+        // unit="Па"
       />
       <ResultField
         label="Динамический напор (Pдин)"
         value={results["Динамическое давление"] ?? "Расчётное"}
-        unit="Па"
+        // unit="Па"
       />
       <ResultField
         label="Полный напор (Pпол)"
         value={results["Полное давление"] ?? "Расчётное"}
-        unit="Па"
+        // unit="Па"
       />
       <ResultField
         label="Производительность (Gв)"
         value={results["Производительность вентилятора"] ?? "Расчётное"}
-        unit="м³/ч"
+        // unit="м³/ч"
       />
       <ResultField
         label="Скорость воздуха в вентиляторе (wвен)"
         value={results["Скорость в вентиляторе"] ?? "Расчётное"}
-        unit="м/с"
+        // unit="м/с"
       />
       <ResultField
         label="Скорость воздуха в градирне (wгр)"
         value={results["Скорость воздуха в градирне"] ?? "Расчётное"}
-        unit="м/с"
+        // unit="м/с"
       />
       <ResultField
         label="Потребляемая мощность (N₀)"
         value={results["Потребляемая мощность"] ?? "Расчётное"}
-        unit="кВт"
+        // unit="кВт"
       />
       <ResultField
         label="Минимальная мощность привода (N)"
         value={results["Мощность привода"] ?? "Расчётное"}
-        unit="кВт"
+        // unit="кВт"
       />
       <ResultField
         label="Суммарное сопротивление (z)"
         value={results["Суммарное сопротивление"] ?? "Расчётное"}
-        unit=""
+        // unit=""
       />
     </Section>
   );

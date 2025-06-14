@@ -93,7 +93,10 @@ export const ResultsPage = () => {
         <div className="row">
           <div className="col">
             <CalculationForInitialDataSection 
-              results={results.performance} 
+              results={{
+                performance:results.performance,
+                temperatures: results.temperatures
+              }} 
             />
           </div>
           <div className="col">
@@ -109,12 +112,15 @@ export const ResultsPage = () => {
         <div className="row">
           <div className="col">
             <CalculationForParametersOutdoorAirSection  
-              results={results.temperatures} 
+              results={{
+                waterLoss: results.waterLoss,
+                temperatures: results.temperatures
+              }} 
             />
           </div>
           <div className="col">
             <FanSystemResultsSection 
-              results={results.fanSystem} 
+              results={results.fanSystem}
             />
           </div>
         </div>

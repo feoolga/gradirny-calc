@@ -13,23 +13,23 @@ export const CalculationForInitialDataSection = ({ results }) => {
       /> */}
       <ResultField
         label="Производительность секции"
-        value={results["Производительность секции"]}
+        value={results.performance["Производительность секции"]}
       />
       <ResultField
         label="Плотность орошения"
-        value={results["Плотность орошения"]}
+        value={results.performance["Плотность орошения"]}
       />
       <ResultField
         label="Средняя температура воды"
-        value={results["Средняя температура воды"]}
+        value={results.temperatures["Средняя температура воды"]}
       />
       <ResultField
         label="Мощность"
-        value={results["Тепловая мощность"]}
+        value={results.performance["Тепловая мощность"]}
       />
       <ResultField
         label="Соотношение воды и воздуха"
-        value={results["Соотношение воздух/вода"]}
+        value={results.performance?.["Соотношение воздух/вода"] ?? "Н/д"}
       />
     </Section>
   );
