@@ -6,7 +6,7 @@ import { InitialDataSection } from "./InitialDataSection";
 import { TowerParametersSection } from "./TowerParametersSection";
 import { ParametersOutdoorAirSection } from "./ParametersOutdoorAirSection";
 import { SprinklerCharacteristicsSection } from "./SprinklerCharacteristicsSection";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import calculations from '../utils/calculations';
 import { PHYSICS } from '../utils/constants';
 
@@ -14,31 +14,30 @@ const validationSchema = Yup.object({
   city: Yup.string().required('Укажите город'),
   sprinklerName: Yup.string().required('Выберите модель оросителя'),
   initialData: Yup.object({
-    g1: Yup.number().required("Обязательное поле").min(1000, "Минимум 1000 м³/ч"),
-    n: Yup.number().required("Обязательное поле").min(1, "Минимум 1 секция").integer("Должно быть целым числом"),
-    t1: Yup.number().required("Обязательное поле").min(0, "Минимум 0°C").max(100, "Максимум 100°C"),
-    t2: Yup.number().required("Обязательное поле").min(0, "Минимум 0°C").max(100, "Максимум 100°C")
+    g1: Yup.number().required("Обязательное поле").min(50, "Минимум 50 м³/ч").max(20000, "Максимум 20000 м³/ч"),
+    n: Yup.number().required("Обязательное поле").min(1, "Минимум 1 секция").max(20, "Максимум 20 секций").integer("Должно быть целым числом"),
+    t1: Yup.number().required("Обязательное поле").min(20, "Минимум 20°C").max(65, "Максимум 65°C"),
+    t2: Yup.number().required("Обязательное поле").min(13, "Минимум 13°C").max(40, "Максимум 40°C")
       .test('t2-less-t1', 't₂ должна быть меньше t₁', function(value) {
-        // Проверяем только если оба поля заполнены
         if (!value || !this.parent.t1) return true;
         return value < this.parent.t1;
       }),
   }),
   towerParameters: Yup.object({
-    width: Yup.number().required("Обязательное поле").min(1, "Минимум 1 м").max(50, "Максимум 50 м"),
-    length: Yup.number().required("Обязательное поле").min(1, "Минимум 1 м").max(50, "Максимум 50 м"),
-    fanDiameter: Yup.number().required("Обязательное поле").min(0.5, "Минимум 0.5 м").max(20, "Максимум 20 м"),
-    windowHeight: Yup.number().required("Обязательное поле").min(0.5, "Минимум 0.5 м").max(10, "Максимум 10 м"),
+    width: Yup.number().required("Обязательное поле").min(2, "Минимум 2 м").max(22, "Максимум 22 м"),
+    length: Yup.number().required("Обязательное поле").min(2, "Минимум 2 м").max(22, "Максимум 22 м"),
+    fanDiameter: Yup.number().required("Обязательное поле").min(0.6, "Минимум 0.6 м").max(20, "Максимум 20 м"),
+    windowHeight: Yup.number().required("Обязательное поле").min(0.8, "Минимум 0.8 м").max(6, "Максимум 6 м"),
   }),
   airParameters: Yup.object({
     humidity: Yup.number()
       .required("Укажите влажность")
-      .min(0, "Минимум 0%")
-      .max(100, "Максимум 100%"),
+      .min(10, "Минимум 10%")
+      .max(99, "Максимум 99%"),
     temperature_dry: Yup.number()
       .required("Укажите температуру")
-      .min(-50, "Минимум -50°C")
-      .max(60, "Максимум 60°C"),
+      .min(12, "Минимум 12°C")
+      .max(40, "Максимум 40°C"),
     barometric_press: Yup.number()
       .required("Укажите давление")
       .min(90, "Минимум 90 кПа")
@@ -61,8 +60,47 @@ const validationSchema = Yup.object({
   }),
 });
 
+const defaultValues = {
+  city: 'Волгоград',
+  initialData: {
+    g1: 7500,
+    n: 3,
+    t1: 46,
+    t2: 35,
+  },
+  towerParameters: {
+    width: 12,
+    length: 12,
+    fanDiameter: 7,
+    windowHeight: 1.9,
+  },
+  airParameters: {
+    humidity: 32,
+    temperature_dry: 32,
+    barometric_press: 100.4,
+  },
+  sprinklerCharacteristics: {
+    a0: 0.858,
+    m: 0.3,
+    kor: 0.541,
+    hor: 0.9,
+  },
+  resistanceCoefficients: {
+    zso: 8.2,
+    zvu: 6,
+    zok: 8,
+  },
+  efficiency: {
+    etaK: 0.69,
+    etaP: 1,
+  },
+};
+
 export const CalculationForm = () => {
+  const location = useLocation();
+  const savedData = location.state?.savedFormData;
   const navigate = useNavigate();
+  
   const [autoResults, setAutoResults] = useState({ 
     gx: '0', 
     gg: '0', 
@@ -72,45 +110,16 @@ export const CalculationForm = () => {
   });
 
   const formik = useFormik({
-    initialValues: {
-      city: 'Волгоград',
-      initialData: {
-        g1: 7500,
-        n: 3,
-        t1: 46,
-        t2: 35,
-      },
-      towerParameters: {
-        width: 12,
-        length: 12,
-        fanDiameter: 7,
-        windowHeight: 1.9,
-      },
-      airParameters: {
-        humidity: 32,
-        temperature_dry: 32,
-        barometric_press: 100.4,
-      },
-      sprinklerCharacteristics: {
-        a0: 0.858,
-        m: 0.3,
-        kor: 0.541,
-        hor: 0.9,
-      },
-      resistanceCoefficients: {
-        zso: 8.2,
-        zvu: 6,
-        zok: 8,
-      },
-      efficiency: {
-        etaK: 0.69,
-        etaP: 1,
-      },
-    },
+    initialValues: savedData || defaultValues,
     validationSchema,
     onSubmit: (values) => {
       const results = calculations.getCalculationResults(values);
-      navigate('/results-page', { state: { results } });
+      navigate('/results-page', { 
+        state: { 
+          results,
+          inputData: values // Сохраняем исходные данные для возврата
+        } 
+      });
     },
   });
 
@@ -205,7 +214,7 @@ export const CalculationForm = () => {
         averageTemp: tAvg.toFixed(1),
         sprinklerEfficiency: a0,
         resistanceCoefficient: m.toFixed(2),
-        city: values.city // Добавляем город в результаты
+        city: values.city
       });
     }
   }, [
@@ -216,8 +225,6 @@ export const CalculationForm = () => {
     pTotal, gv, wven, wgr, n0, nMin, zTotal, tAvg,
     values.city
   ]);
-
-  console.log('Available functions:', Object.keys(calculations));
 
   return (
     <div className="container">

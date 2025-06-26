@@ -23,7 +23,13 @@ const ExportControls = ({ results, fileName = "градирня_расчет" })
   };
 
   const handleGoHome = () => {
-    navigate('/'); // Переход на главную страницу
+    // Предполагаем, что results содержит inputData
+    // Если нет, нужно модифицировать getCalculationResults
+    navigate('/', { 
+      state: { 
+        savedFormData: results.inputData || formik.values // fallback на formik.values
+      } 
+    });
   };
 
   return (

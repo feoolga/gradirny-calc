@@ -225,7 +225,8 @@ const calcMinDrivePower = (n0, etaP) => {
  */
 const calcLambda = (g1, n) => {
   if (!g1 || g1 <= 0 || !n || n <= 0) return 0;
-  return 1100000 / (g1 / n);
+  const lambda = 1100000 / (g1 / n);
+  return Math.min(lambda, DEFAULTS.MAX_LAMBDA);
 };
 
 /**
@@ -373,8 +374,11 @@ export const getCalculationResults = (values) => {
         "Кол-во секций": n,
         "Атм. давление": `${barometric_press} кПа`,
         "Влажность воздуха": `${humidity}%`
-      }
+      },
+      
+      inputData: values // Добавляем исходные данные формы
     };
+    
     
   } catch (error) {
     console.error("Расчётная ошибка:", error);
