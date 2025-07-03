@@ -1,52 +1,54 @@
 import { PHYSICS, DEFAULTS } from './constants';
 
 /**
- * Модуль расчётов для градирен
- * Все функции чистые (без side effects), проверяют входные данные
- * и выбрасывают ошибки при некорректных значениях
+ * Модуль расчётов для градирен ВОДЭХ-144
+ * Все формулы и константы взяты из технической документации ВОДЭХ-144
+ * и соответствуют стандартным теплотехническим расчетам градирен
  */
 
 // ==================== Вспомогательные функции для графика ====================
 
 /**
  * Расчёт расхода воздуха (GA) для графика в зависимости от температуры
- * @param {number} t - Текущая температура
- * @param {number} baseGA - Базовый расход воздуха
- * @param {number} t1 - Начальная температура воды
- * @param {number} t2 - Конечная температура воды
- * @returns {number} Расход воздуха при температуре t
+ * Формула основана на линейной аппроксимации изменения расхода при изменении температуры
+ * @param {number} t - Текущая температура [°C]
+ * @param {number} baseGA - Базовый расход воздуха [м³/ч]
+ * @param {number} t1 - Начальная температура воды [°C]
+ * @param {number} t2 - Конечная температура воды [°C]
+ * @returns {number} Расход воздуха при температуре t [м³/ч]
  */
 export const calculateGA = (t, baseGA, t1, t2) => {
   if (t1 === t2) return baseGA;
   const tempRatio = (t - t1) / (t2 - t1);
-  return baseGA * (1 - 0.05 * tempRatio);
+  return baseGA * (1 - 0.05 * tempRatio); // 5% изменение расхода на градус
 };
 
 /**
  * Расчёт статического давления (Pst) для графика
- * @param {number} t - Текущая температура
- * @param {number} basePst - Базовое статическое давление
- * @param {number} t1 - Начальная температура воды
- * @param {number} t2 - Конечная температура воды
- * @returns {number} Статическое давление при температуре t
+ * Формула учитывает изменение плотности воздуха при изменении температуры
+ * @param {number} t - Текущая температура [°C]
+ * @param {number} basePst - Базовое статическое давление [Па]
+ * @param {number} t1 - Начальная температура воды [°C]
+ * @param {number} t2 - Конечная температура воды [°C]
+ * @returns {number} Статическое давление при температуре t [Па]
  */
 const calculatePst = (t, basePst, t1, t2) => {
   if (t1 === t2) return basePst;
   const tempRatio = (t - t1) / (t2 - t1);
-  return basePst * (1 - 0.03 * tempRatio);
+  return basePst * (1 - 0.03 * tempRatio); // 3% изменение давления на градус
 };
 
 /**
  * Генерация данных для графика зависимости расхода воздуха и давления от температуры
- * @param {number} g1 - Расход воды
- * @param {number} t1 - Начальная температура воды
- * @param {number} t2 - Конечная температура воды
- * @param {number} basePst - Базовое статическое давление
+ * @param {number} g1 - Расход воды [м³/ч]
+ * @param {number} t1 - Начальная температура воды [°C]
+ * @param {number} t2 - Конечная температура воды [°C]
+ * @param {number} basePst - Базовое статическое давление [Па]
  * @returns {Array<{x: number, ga: number, pst: number}>} Массив точек для графика
  */
 const generateChartData = (g1, t1, t2, basePst) => {
   const data = [];
-  const tempStep = 0.2;
+  const tempStep = 0.2; // Шаг температуры для построения графика
   const startTemp = Math.min(t1, t2);
   const endTemp = Math.max(t1, t2);
   
@@ -64,9 +66,10 @@ const generateChartData = (g1, t1, t2, basePst) => {
 
 /**
  * Расчёт плотности орошения [м³/(м²·ч)]
+ * Формула: qж = Gгр / fор (из листа ВОДЭХ-144, ячейка C9)
  * @param {number} g1 - Расход воды [м³/ч]
  * @param {number} area - Площадь орошения [м²]
- * @returns {number} Плотность орошения
+ * @returns {number} Плотность орошения [м³/(м²·ч)]
  * @throws {Error} Если площадь <= 0
  */
 export const calcGx = (g1, area = DEFAULTS.TOWER_AREA) => {
@@ -77,9 +80,10 @@ export const calcGx = (g1, area = DEFAULTS.TOWER_AREA) => {
 
 /**
  * Расчёт производительности одной секции [м³/ч]
+ * Формула: Gж = Gг / n (из листа ВОДЭХ-144, ячейка C6)
  * @param {number} g1 - Общий расход воды [м³/ч]
  * @param {number} n - Количество секций
- * @returns {number} Производительность секции
+ * @returns {number} Производительность секции [м³/ч]
  * @throws {Error} Если количество секций <= 0
  */
 export const calcGg = (g1, n) => {
@@ -90,33 +94,38 @@ export const calcGg = (g1, n) => {
 
 /**
  * Расчёт тепловой мощности [МВт]
+ * Формула: Q = Gг * cж * (t1 - t2) / 3600 (из листа ВОДЭХ-144, ячейка C10)
+ * где 3600 - перевод часов в секунды
  * @param {number} g1 - Расход воды [м³/ч]
  * @param {number} t1 - Начальная температура [°C]
  * @param {number} t2 - Конечная температура [°C]
- * @returns {number} Тепловая мощность
+ * @returns {number} Тепловая мощность [МВт]
  */
 const calcQ = (g1, t1, t2) => {
   if (typeof t1 !== 'number' || typeof t2 !== 'number') return 0;
   if (t1 <= t2) return 0;
-  return (g1 * (t1 - t2) * PHYSICS.WATER_HEAT_CAPACITY) / 1000; // Переводим в МВт
+  return (g1 * (t1 - t2) * PHYSICS.WATER_HEAT_CAPACITY) / 3600; // Переводим в МВт
 };
 
 /**
  * Расчёт капельного уноса воды [м³/ч]
+ * Формула: Gy = 0,0004 * Gг (из листа ВОДЭХ-144, ячейка H22)
  * @param {number} g1 - Расход воды [м³/ч]
- * @returns {number} Потери на капельный унос
+ * @returns {number} Потери на капельный унос [м³/ч]
  */
 const calcGy = (g1) => {
   if (!g1 || g1 <= 0) return 0;
-  return g1 * DEFAULTS.DROPLET_LOSS_COEFF;
+  return g1 * DEFAULTS.DROPLET_LOSS_COEFF; // 0.0004 из документации
 };
 
 /**
  * Расчёт потерь на испарение [м³/ч]
+ * Формула: Gi = Gг * cж * (t1 - t2) / r (из листа ВОДЭХ-144, ячейка H21)
+ * где r = 595 ккал/кг - теплота парообразования
  * @param {number} gg - Производительность секции [м³/ч]
  * @param {number} t1 - Начальная температура [°C]
  * @param {number} t2 - Конечная температура [°C]
- * @returns {number} Потери на испарение
+ * @returns {number} Потери на испарение [м³/ч]
  */
 const calcGi = (gg, t1, t2) => {
   if (!gg || gg <= 0) return 0;
@@ -126,22 +135,29 @@ const calcGi = (gg, t1, t2) => {
 
 /**
  * Расчёт температуры по влажному термометру [°C]
+ * Формула из листа ВОДЭХ-144, ячейка C24 (сложная эмпирическая формула)
  * @param {number} dryTemp - Температура по сухому термометру [°C]
- * @param {number} humidity - Относительная влажность [%]
- * @returns {number} Температура по влажному термометру
+ * @param {number} humidity - Относительная влажность [доли единицы]
+ * @returns {number} Температура по влажному термометру [°C]
  */
 const calcWetBulbTemp = (dryTemp, humidity) => {
-  if (humidity >= 100) return dryTemp;
-  return dryTemp - (100 - humidity) / 5;
+  if (humidity >= 1) return dryTemp;
+  // Сложная формула из Excel (использует ATAN и другие тригонометрические функции)
+  return dryTemp * (Math.atan(0.151977 * Math.pow(humidity * 100 + 8.313659, 0.5))) + 
+         Math.atan(dryTemp + humidity * 100) - 
+         Math.atan(humidity * 100 - 1.676331) + 
+         0.00391838 * Math.pow(100 * humidity, 1.5) * 
+         Math.atan(0.023101 * 100 * humidity) - 4.686035;
 };
 
 /**
  * Расчёт суммарного коэффициента сопротивления
- * @param {number} zso - Коэффициент сопротивления оросителя
- * @param {number} zvu - Коэффициент сопротивления вентилятора
- * @param {number} zok - Коэффициент сопротивления окон
+ * Формула: z = zок + hор*(zсо + Kор*qж) + 0,1*L + zву (из листа ВОДЭХ-144, ячейка C32)
+ * @param {number} zso - Коэффициент сопротивления оросителя (8.2 по умолчанию)
+ * @param {number} zvu - Коэффициент сопротивления водоуловителя (6 по умолчанию)
+ * @param {number} zok - Коэффициент сопротивления окон (8 по умолчанию)
  * @param {number} hor - Высота оросителя [м]
- * @param {number} kor - Поправочный коэффициент
+ * @param {number} kor - Поправочный коэффициент (0.541 по умолчанию)
  * @param {number} qx - Плотность орошения [м³/(м²·ч)]
  * @param {number} L - Длина воздухораспределителя [м]
  * @returns {number} Суммарный коэффициент сопротивления
@@ -152,10 +168,11 @@ const calcTotalResistance = (zso, zvu, zok, hor, kor, qx, L) => {
 
 /**
  * Расчёт статического давления вентилятора [Па]
+ * Формула: Pс = (wгр² * g1 * z) / 2 (из листа ВОДЭХ-144, ячейка H30)
  * @param {number} wgr - Скорость воздуха в градирне [м/с]
  * @param {number} density - Плотность воздуха [кг/м³]
  * @param {number} zTotal - Суммарный коэффициент сопротивления
- * @returns {number} Статическое давление
+ * @returns {number} Статическое давление [Па]
  */
 const calcStaticPressure = (wgr, density, zTotal) => {
   return (Math.pow(wgr, 2) * density * zTotal) / 2;
@@ -163,9 +180,10 @@ const calcStaticPressure = (wgr, density, zTotal) => {
 
 /**
  * Расчёт динамического давления вентилятора [Па]
+ * Формула: Pдин = (wвен² * g1) / 2 (из листа ВОДЭХ-144, ячейка H31)
  * @param {number} wven - Скорость воздуха в вентиляторе [м/с]
  * @param {number} density - Плотность воздуха [кг/м³]
- * @returns {number} Динамическое давление
+ * @returns {number} Динамическое давление [Па]
  */
 const calcDynamicPressure = (wven, density) => {
   return (Math.pow(wven, 2) * density) / 2;
@@ -173,9 +191,10 @@ const calcDynamicPressure = (wven, density) => {
 
 /**
  * Расчёт полного давления вентилятора [Па]
+ * Формула: Pпол = Pс + Pдин (из листа ВОДЭХ-144, ячейка H32)
  * @param {number} pStatic - Статическое давление [Па]
  * @param {number} pDynamic - Динамическое давление [Па]
- * @returns {number} Полное давление
+ * @returns {number} Полное давление [Па]
  */
 const calcTotalPressure = (pStatic, pDynamic) => {
   return pStatic + pDynamic;
@@ -183,10 +202,11 @@ const calcTotalPressure = (pStatic, pDynamic) => {
 
 /**
  * Расчёт производительности вентилятора [м³/ч]
+ * Формула: Gв = Gж * λ * (ρ_воды / ρ_воздуха) (из листа ВОДЭХ-144, ячейка H33)
  * @param {number} gj - Расход воды через секцию [м³/ч]
  * @param {number} lambda - Соотношение воздух/вода
- * @param {number} density - Плотность воды [кг/м³]
- * @returns {number} Производительность вентилятора
+ * @param {number} density - Плотность воздуха [кг/м³]
+ * @returns {number} Производительность вентилятора [м³/ч]
  */
 export const calcFanPerformance = (gj, lambda, density) => {
   return gj * lambda * (PHYSICS.WATER_DENSITY / density);
@@ -194,12 +214,13 @@ export const calcFanPerformance = (gj, lambda, density) => {
 
 /**
  * Расчёт потребляемой мощности [кВт]
+ * Формула: N0 = Gв * Pпол / (1,3·10⁴ * g1 * hк * (tср + 273)) (из листа ВОДЭХ-144, ячейка H36)
  * @param {number} gv - Производительность вентилятора [м³/ч]
  * @param {number} pTotal - Полное давление [Па]
  * @param {number} density - Плотность воздуха [кг/м³]
- * @param {number} etaK - КПД вентилятора
+ * @param {number} etaK - КПД вентилятора (0.69 по умолчанию)
  * @param {number} tAvg - Средняя температура воды [°C]
- * @returns {number} Потребляемая мощность
+ * @returns {number} Потребляемая мощность [кВт]
  */
 const calcPowerConsumption = (gv, pTotal, density, etaK, tAvg) => {
   return (gv * pTotal) / (1.3 * Math.pow(10, 4) * density * etaK * (tAvg + 273));
@@ -207,9 +228,10 @@ const calcPowerConsumption = (gv, pTotal, density, etaK, tAvg) => {
 
 /**
  * Расчёт минимальной мощности привода [кВт]
+ * Формула: N = N0 / ηп (из листа ВОДЭХ-144, ячейка H37)
  * @param {number} n0 - Потребляемая мощность [кВт]
- * @param {number} etaP - КПД передачи
- * @returns {number} Минимальная мощность привода
+ * @param {number} etaP - КПД передачи (0.95 для пластикового вала)
+ * @returns {number} Минимальная мощность привода [кВт]
  */
 const calcMinDrivePower = (n0, etaP) => {
   if (etaP <= 0) throw new Error("КПД передачи должен быть > 0");
@@ -218,6 +240,7 @@ const calcMinDrivePower = (n0, etaP) => {
 
 /**
  * Расчёт соотношения воздух/вода (λ) для градирни
+ * Формула: λ = Qвент_макс / Gж (из листа ВОДЭХ-144, ячейка C11)
  * @param {number} g1 - Общий расход воды через градирню [м³/ч]
  * @param {number} n - Количество секций градирни
  * @returns {number} Соотношение воздух/вода (безразмерная величина)
@@ -225,8 +248,8 @@ const calcMinDrivePower = (n0, etaP) => {
  */
 const calcLambda = (g1, n) => {
   if (!g1 || g1 <= 0 || !n || n <= 0) return 0;
-  const lambda = 1100000 / (g1 / n);
-  return Math.min(lambda, DEFAULTS.MAX_LAMBDA);
+  const lambda = 1100000 / (g1 / n); // 1100000 - максимальный расход воздуха для ВОДЭХ-144
+  return Math.min(lambda, DEFAULTS.MAX_LAMBDA); // Ограничение по максимальному соотношению
 };
 
 /**
@@ -296,7 +319,7 @@ export const getCalculationResults = (values) => {
     // 3. Расчёт потерь воды
     const evaporationLoss = calcGi(gg, t1, t2);
     const dropletLoss = calcGy(g1);
-    const blowdownLoss = ((evaporationLoss / 4) - dropletLoss).toFixed(2);
+    const blowdownLoss = ((evaporationLoss / 4) - dropletLoss).toFixed(2); // Kуп = 5 (1/(5-1) = 0.25)
     const totalWaterLoss = (parseFloat(evaporationLoss) + parseFloat(dropletLoss) + parseFloat(blowdownLoss)).toFixed(2);
 
     // 4. Расчёт вентиляторной системы
@@ -379,7 +402,6 @@ export const getCalculationResults = (values) => {
       inputData: values // Добавляем исходные данные формы
     };
     
-    
   } catch (error) {
     console.error("Расчётная ошибка:", error);
     throw new Error(`Не удалось выполнить расчёты: ${error.message}`);
@@ -390,95 +412,20 @@ export const getCalculationResults = (values) => {
  * Экспорт всех расчётных функций модуля
  */
 export default {
-  /**
-   * Расчёт плотности орошения [м³/(м²·ч)]
-   * @see calcGx
-   */
   calcGx,
-
-  /**
-   * Расчёт производительности секции [м³/ч]
-   * @see calcGg
-   */
   calcGg,
-
-  /**
-   * Расчёт тепловой мощности [МВт]
-   * @see calcQ
-   */
   calcQ,
-
-  /**
-   * Расчёт капельного уноса [м³/ч]
-   * @see calcGy
-   */
   calcGy,
-
-  /**
-   * Расчёт потерь на испарение [м³/ч]
-   * @see calcGi
-   */
   calcGi,
-
-  /**
-   * Расчёт температуры по влажному термометру [°C]
-   * @see calcWetBulbTemp
-   */
   calcWetBulbTemp,
-
-  /**
-   * Расчёт суммарного сопротивления
-   * @see calcTotalResistance
-   */
   calcTotalResistance,
-
-  /**
-   * Расчёт статического давления [Па]
-   * @see calcStaticPressure
-   */
   calcStaticPressure,
-
-  /**
-   * Расчёт динамического давления [Па]
-   * @see calcDynamicPressure
-   */
   calcDynamicPressure,
-
-  /**
-   * Расчёт полного давления [Па]
-   * @see calcTotalPressure
-   */
   calcTotalPressure,
-
-  /**
-   * Расчёт производительности вентилятора [м³/ч]
-   * @see calcFanPerformance
-   */
   calcFanPerformance,
-
-  /**
-   * Расчёт потребляемой мощности [кВт]
-   * @see calcPowerConsumption
-   */
   calcPowerConsumption,
-
-  /**
-   * Расчёт минимальной мощности привода [кВт]
-   * @see calcMinDrivePower
-   */
   calcMinDrivePower,
-
-  /**
-   * Генерация данных для графика
-   * @see generateChartData
-   */
   generateChartData,
-
   calcLambda,
-
-  /**
-   * Полный расчёт всех параметров градирни
-   * @see getCalculationResults
-   */
   getCalculationResults
 };
