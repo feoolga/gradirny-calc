@@ -6,12 +6,7 @@ export const CalculationForParametersOutdoorAirSection = ({ results }) => {
 
 
   return (
-    <Section title="Параметры наружного воздуха и расхода воды">
-      <ResultField
-        label="Температура по влажному термометру (τ)"
-        value={results.temperatures["Температура по влажному терм."] ?? "Расчётное"}
-        // unit="°C"
-      />
+    <Section title="Расход воды">
       <ResultField
         label="Потери на испарение (Gi)"
         value={results.waterLoss["Испарение"] ?? "Н/д"}

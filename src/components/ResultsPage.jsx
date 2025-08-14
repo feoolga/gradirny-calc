@@ -4,6 +4,7 @@ import { useFormik } from 'formik';
 import { CalculationForInitialDataSection } from "./CalculationForInitialDataSection";
 import { CalculationForTowerParametersSection } from "./CalculationForTowerParametersSection";
 import { CalculationForParametersOutdoorAirSection } from "./CalculationForParametersOutdoorAirSection";
+import { TemperatureResultsSection } from "./TemperatureResultsSection";
 import { FanSystemResultsSection } from "./FanSystemResultsSection";
 import ExportControls from './ExportControls';
 
@@ -67,8 +68,10 @@ export const ResultsPage = () => {
     temperatures: {
       title: 'Температурные параметры',
       items: [
+        { key: 'Температура по сухому терм.', label: 'Температура по сухому термометру' },
+        { key: 'Температура по влажному терм.', label: 'Температура по влажному термометру' },
         { key: 'Средняя температура воды', label: 'Средняя температура воды' },
-        { key: 'Температура по влажному термометру', label: 'Температура по влажному термометру' },
+        { key: 'Перепад температур', label: 'Перепад температур воды' },
       ]
     }
   };
@@ -117,6 +120,7 @@ export const ResultsPage = () => {
                 temperatures: results.temperatures
               }} 
             />
+            <TemperatureResultsSection results={results.temperatures} />
           </div>
           <div className="col">
             <FanSystemResultsSection 

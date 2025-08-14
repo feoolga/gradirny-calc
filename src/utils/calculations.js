@@ -140,14 +140,38 @@ const calcGi = (gg, t1, t2) => {
  * @param {number} humidity - Относительная влажность [доли единицы]
  * @returns {number} Температура по влажному термометру [°C]
  */
+// const calcWetBulbTemp = (dryTemp, humidity) => {
+//   if (humidity >= 1) return dryTemp;
+//   // Сложная формула из Excel (использует ATAN и другие тригонометрические функции)
+//   return dryTemp * (Math.atan(0.151977 * Math.pow(humidity * 100 + 8.313659, 0.5))) + 
+//          Math.atan(dryTemp + humidity * 100) - 
+//          Math.atan(humidity * 100 - 1.676331) + 
+//          0.00391838 * Math.pow(100 * humidity, 1.5) * 
+//          Math.atan(0.023101 * 100 * humidity) - 4.686035;
+// };
+
+/**
+ * Расчёт температуры по влажному термометру [°C]
+ * Исправленная формула на основе уравнения Stull (2011)
+ * @param {number} dryTemp - Температура по сухому термометру [°C]
+ * @param {number} humidity - Относительная влажность [доли единицы]
+ * @returns {number} Температура по влажному термометру [°C]
+ */
 const calcWetBulbTemp = (dryTemp, humidity) => {
   if (humidity >= 1) return dryTemp;
-  // Сложная формула из Excel (использует ATAN и другие тригонометрические функции)
-  return dryTemp * (Math.atan(0.151977 * Math.pow(humidity * 100 + 8.313659, 0.5))) + 
-         Math.atan(dryTemp + humidity * 100) - 
-         Math.atan(humidity * 100 - 1.676331) + 
-         0.00391838 * Math.pow(100 * humidity, 1.5) * 
-         Math.atan(0.023101 * 100 * humidity) - 4.686035;
+  
+  // Конвертируем влажность из долей в проценты
+  const rh = humidity * 100;
+  
+  // Уравнение Stull (2011) для расчета температуры влажного термометра
+  const wetBulb = dryTemp * Math.atan(0.151977 * Math.sqrt(rh + 8.313659)) + 
+                  Math.atan(dryTemp + rh) - 
+                  Math.atan(rh - 1.676331) + 
+                  0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh) - 
+                  4.686035;
+  
+  // Ограничиваем значение разумными пределами
+  return Math.max(0, Math.min(wetBulb, dryTemp));
 };
 
 /**

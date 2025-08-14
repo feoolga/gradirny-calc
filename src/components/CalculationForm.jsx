@@ -184,13 +184,22 @@ export const CalculationForm = () => {
     [n0, etaP]
   );
 
+  const wetBulbTemp = useMemo(() => {
+    if (temperature_dry !== undefined && humidity !== undefined) {
+      // Конвертируем влажность из % в доли (32% -> 0.32)
+      const humidityFraction = humidity / 100;
+      return calculations.calcWetBulbTemp(temperature_dry, humidityFraction).toFixed(1);
+    }
+    return null;
+  }, [temperature_dry, humidity]);
+
   useEffect(() => {
     if (g1 && t1 && t2 && n && width && length && windowHeight && 
         humidity !== undefined && temperature_dry !== undefined &&
         a0 && m && kor && hor && zso && zvu && zok && etaK && etaP) {
       
       setAutoResults({
-        wetBulbTemp: calculations.calcWetBulbTemp(temperature_dry, humidity).toFixed(1),
+        wetBulbTemp: wetBulbTemp,
         gx: qx.toFixed(2),
         gg: gg.toFixed(2),
         q: calculations.calcQ(g1, t1, t2).toFixed(2),
@@ -218,7 +227,7 @@ export const CalculationForm = () => {
       });
     }
   }, [
-    g1, t1, t2, n, width, length, windowHeight,
+    wetBulbTemp, g1, t1, t2, n, width, length, windowHeight,
     humidity, temperature_dry, a0, m, kor, hor,
     zso, zvu, zok, etaK, etaP, qx, gg, gi, gy,
     gp, gd, lambda, area, L, pStatic, pDynamic,
