@@ -93,6 +93,39 @@ export const calcGg = (g1, n) => {
 };
 
 /**
+ * Расчёт плотности воздуха [кг/м³]
+ * Формула: ρ = (Pб - φ*Pнас) / (Rвс * T) + φ*ρнас
+ * где Pнас - давление насыщенного пара, ρнас - плотность насыщенного пара
+ * @param {number} pressure - Барометрическое давление [кПа]
+ * @param {number} temperature - Температура воздуха [°C]
+ * @param {number} humidity - Относительная влажность [доли единицы]
+ * @returns {number} Плотность воздуха [кг/м³]
+ */
+export const calcAirDensity = (pressure, temperature, humidity) => {
+  console.log('calcAirDensity input:', { pressure, temperature, humidity });
+  
+  // Давление насыщенного пара
+  const satVapourPressure = (0.325 * Math.pow(temperature, 2.11) - 4.35 * temperature + 140.55 + 5 * Math.sin(temperature/3)) / 101.95;
+  console.log('satVapourPressure:', satVapourPressure);
+  
+  // Плотность насыщенного пара
+  const satVapourDensity = (0.159 * Math.pow(temperature, 1.7) - 1.22 * temperature + 15.56 + 0.2 * Math.sin(temperature/3)) / 1000;
+  console.log('satVapourDensity:', satVapourDensity);
+  
+  // Плотность воздуха
+  const denominator = 0.00981 * PHYSICS.GAS_CONSTANT_AIR * (temperature + 273.2);
+  console.log('denominator:', denominator);
+  
+  const numerator = pressure - humidity * satVapourPressure;
+  console.log('numerator:', numerator);
+  
+  const density = (numerator / denominator) + humidity * satVapourDensity;
+  console.log('final density:', density);
+  
+  return density;
+};
+
+/**
  * Расчёт тепловой мощности [МВт]
  * Формула: Q = Gг * cж * (t1 - t2) / 3600 (из листа ВОДЭХ-144, ячейка C10)
  * где 3600 - перевод часов в секунды
@@ -154,23 +187,19 @@ const calcGi = (gg, t1, t2) => {
  * Расчёт температуры по влажному термометру [°C]
  * Исправленная формула на основе уравнения Stull (2011)
  * @param {number} dryTemp - Температура по сухому термометру [°C]
- * @param {number} humidity - Относительная влажность [доли единицы]
+ * @param {number} humidityFraction - Относительная влажность [доли единицы]
  * @returns {number} Температура по влажному термометру [°C]
  */
-const calcWetBulbTemp = (dryTemp, humidity) => {
-  if (humidity >= 1) return dryTemp;
+const calcWetBulbTemp = (dryTemp, humidityFraction) => {
+  if (humidityFraction >= 1) return dryTemp;
   
-  // Конвертируем влажность из долей в проценты
-  const rh = humidity * 100;
-  
-  // Уравнение Stull (2011) для расчета температуры влажного термометра
-  const wetBulb = dryTemp * Math.atan(0.151977 * Math.sqrt(rh + 8.313659)) + 
-                  Math.atan(dryTemp + rh) - 
-                  Math.atan(rh - 1.676331) + 
-                  0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh) - 
+  const wetBulb = dryTemp * Math.atan(0.151977 * Math.sqrt(humidityFraction * 100 + 8.313659)) + 
+                  Math.atan(dryTemp + humidityFraction * 100) - 
+                  Math.atan(humidityFraction * 100 - 1.676331) + 
+                  0.00391838 * Math.pow(humidityFraction * 100, 1.5) * 
+                  Math.atan(0.023101 * humidityFraction * 100) - 
                   4.686035;
   
-  // Ограничиваем значение разумными пределами
   return Math.max(0, Math.min(wetBulb, dryTemp));
 };
 
@@ -334,36 +363,47 @@ export const getCalculationResults = (values) => {
     const tAvg = (t1 + t2) / 2;
     const windowArea = length * n * windowHeight;
 
-    // 2. Основные гидравлические параметры
+    // 2. Расчёт плотности воздуха
+    const humidityFraction = humidity / 100;
+    console.log('Density calculation params:', {
+      pressure: barometric_press,
+      temperature: temperature_dry, 
+      humidity: humidityFraction
+    });
+
+    const airDensityValue = calcAirDensity(barometric_press, temperature_dry, humidityFraction);
+    console.log('Calculated air density:', airDensityValue);
+
+    // 3. Основные гидравлические параметры
     const gg = calcGg(g1, n);
     const qx = calcGx(g1, area);
     const lambda = calcLambda(g1, n);
     const heatPower = calcQ(g1, t1, t2);
 
-    // 3. Расчёт потерь воды
+    // 4. Расчёт потерь воды
     const evaporationLoss = calcGi(gg, t1, t2);
     const dropletLoss = calcGy(g1);
     const blowdownLoss = ((evaporationLoss / 4) - dropletLoss).toFixed(2); // Kуп = 5 (1/(5-1) = 0.25)
     const totalWaterLoss = (parseFloat(evaporationLoss) + parseFloat(dropletLoss) + parseFloat(blowdownLoss)).toFixed(2);
 
-    // 4. Расчёт вентиляторной системы
+    // 5. Расчёт вентиляторной системы
     const zTotal = calcTotalResistance(zso, zvu, zok, hor, kor, qx, L);
     const gv = calcFanPerformance(gg, lambda, PHYSICS.WATER_DENSITY);
     const wgr = gv / (3600 * area);
     const wven = gv / (Math.PI * Math.pow(fanDiameter/2, 2) * 3600);
     
-    const pStatic = calcStaticPressure(wgr, PHYSICS.WATER_DENSITY, zTotal);
-    const pDynamic = calcDynamicPressure(wven, PHYSICS.WATER_DENSITY);
-    const pTotal = pStatic + pDynamic;
+    const pStatic = calcStaticPressure(wgr, airDensityValue, zTotal);
+    const pDynamic = calcDynamicPressure(wven, airDensityValue);
+    const pTotal = calcTotalPressure(pStatic, pDynamic);
     
-    const n0 = calcPowerConsumption(gv, pTotal, PHYSICS.WATER_DENSITY, etaK, tAvg);
+    const n0 = calcPowerConsumption(gv, pTotal, airDensityValue, etaK, tAvg);
     const nMin = calcMinDrivePower(n0, etaP);
 
-    // 5. Температурные характеристики
-    const wetBulbTemp = calcWetBulbTemp(temperature_dry, humidity);
+    // 6. Температурные характеристики
+    const wetBulbTemp = calcWetBulbTemp(temperature_dry, humidityFraction);
     const tempDifference = t1 - t2;
 
-    // 6. Формирование результатов
+    // 7. Формирование результатов
     return {
       performance: {
         "Производительность градирни": `${g1} м³/ч`,
@@ -384,7 +424,8 @@ export const getCalculationResults = (values) => {
         "Площадь орошения": `${area.toFixed(2)} м²`,
         "Длина воздухораспределителя": `${L.toFixed(2)} м`,
         "Площадь окон": `${windowArea.toFixed(2)} м²`,
-        "Диаметр вентилятора": `${fanDiameter.toFixed(2)} м`
+        "Диаметр вентилятора": `${fanDiameter.toFixed(2)} м`,
+        "Высота оросителя": `${hor.toFixed(2)} м`
       },
       
       fanSystem: {
@@ -399,6 +440,14 @@ export const getCalculationResults = (values) => {
         "Мощность привода": `${nMin.toFixed(2)} кВт`
       },
       
+      physics: {
+        "Плотность воздуха": `${airDensityValue.toFixed(4)} кг/м³`,
+        "Плотность воды": `${PHYSICS.WATER_DENSITY} кг/м³`,
+        "Теплоёмкость воды": `${PHYSICS.WATER_HEAT_CAPACITY} кДж/(кг·°C)`,
+        "Теплота парообразования": `${PHYSICS.EVAPORATION_HEAT} ккал/кг`,
+        "Газовая постоянная": `${PHYSICS.GAS_CONSTANT_AIR} кг·м/(кг·°C)`
+      },
+      
       temperatures: {
         "Температура по сухому терм.": `${temperature_dry} °C`,
         "Температура по влажному терм.": `${wetBulbTemp.toFixed(1)} °C`,
@@ -409,6 +458,7 @@ export const getCalculationResults = (values) => {
       sprinkler: {
         "Эффективность оросителя": a0,
         "Коэффициент сопротивления": m.toFixed(2),
+        "Поправочный коэффициент": kor.toFixed(3),
         "Высота оросителя": `${hor.toFixed(2)} м`
       },
       
@@ -420,7 +470,8 @@ export const getCalculationResults = (values) => {
         "Город": city,
         "Кол-во секций": n,
         "Атм. давление": `${barometric_press} кПа`,
-        "Влажность воздуха": `${humidity}%`
+        "Влажность воздуха": `${humidity}%`,
+        "Обеспеченность": `${values.reliability || 0.95}`
       },
       
       inputData: values // Добавляем исходные данные формы
@@ -441,6 +492,7 @@ export default {
   calcQ,
   calcGy,
   calcGi,
+  calcAirDensity,
   calcWetBulbTemp,
   calcTotalResistance,
   calcStaticPressure,

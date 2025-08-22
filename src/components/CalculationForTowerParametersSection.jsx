@@ -18,6 +18,10 @@ export const CalculationForTowerParametersSection = ({ results }) => {
         // unit="м"
       />
       <ResultField
+        label="Высота слоя оросителя (hор)"
+        value={results.geometry["Высота оросителя"] || "Расчётное"}
+      />
+      <ResultField
         label="Площадь окон градирни (Sок)"
         value={results.geometry["Площадь окон"] || "Расчётное"}
         // unit="м²"

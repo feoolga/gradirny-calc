@@ -2,11 +2,7 @@ import { InputField } from "./InputField";
 import { Section } from "./Section";
 import { Form } from 'react-bootstrap';
 
-export const ParametersOutdoorAirSection = ({ formik }) => {
-  // Рассчитываем температуру по влажному термометру
-  const wetBulbTemp = formik.values.airParameters?.temperature_dry 
-    ? (formik.values.airParameters.temperature_dry - (100 - formik.values.airParameters.humidity) / 5).toFixed(1)
-    : "—";
+export const ParametersOutdoorAirSection = ({ formik, wetBulbTemp }) => {
 
   return (
     <Section title="Климатические условия">
@@ -56,7 +52,7 @@ export const ParametersOutdoorAirSection = ({ formik }) => {
           type="text"
           className="form-control form-control-sm ms-5"
           style={{ width: '100px', display: 'inline-block' }}
-          value={wetBulbTemp}
+          value={wetBulbTemp || "—"}
           readOnly
           disabled
         />

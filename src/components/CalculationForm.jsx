@@ -184,6 +184,18 @@ export const CalculationForm = () => {
     [n0, etaP]
   );
 
+  const airDensity = useMemo(() => {
+    if (temperature_dry !== undefined && humidity !== undefined && barometric_press !== undefined) {
+      const humidityFraction = humidity / 100;
+      return calculations.calcAirDensity(
+        barometric_press, 
+        temperature_dry, 
+        humidityFraction
+      ).toFixed(4);
+    }
+    return null;
+  }, [temperature_dry, humidity, barometric_press]);
+
   const wetBulbTemp = useMemo(() => {
     if (temperature_dry !== undefined && humidity !== undefined) {
       // Конвертируем влажность из % в доли (32% -> 0.32)
@@ -207,8 +219,10 @@ export const CalculationForm = () => {
         gy: gy.toFixed(2),
         gp: gp,
         gd: gd,
+        airDensity: airDensity,
         lambda: lambda.toFixed(2),
         towerArea: area.toFixed(2),
+        sprayerHeight: hor,
         airDistributorLength: L.toFixed(2),
         windowArea: (length * n * windowHeight).toFixed(2),
         staticPressure: pStatic.toFixed(2),
@@ -244,7 +258,10 @@ export const CalculationForm = () => {
           <div className="col">
             <InitialDataSection formik={formik} />
             <TowerParametersSection formik={formik} />
-            <ParametersOutdoorAirSection formik={formik} />
+            <ParametersOutdoorAirSection
+              formik={formik}
+              wetBulbTemp={wetBulbTemp}
+            />
           </div>
           <div className="col">
             <SprinklerCharacteristicsSection formik={formik} />

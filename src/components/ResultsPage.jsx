@@ -7,6 +7,7 @@ import { CalculationForParametersOutdoorAirSection } from "./CalculationForParam
 import { TemperatureResultsSection } from "./TemperatureResultsSection";
 import { FanSystemResultsSection } from "./FanSystemResultsSection";
 import ExportControls from './ExportControls';
+import { PhysicsParametersSection } from "./PhysicsParametersSection";
 
 export const ResultsPage = () => {
   const location = useLocation();
@@ -117,7 +118,6 @@ export const ResultsPage = () => {
             <CalculationForParametersOutdoorAirSection  
               results={{
                 waterLoss: results.waterLoss,
-                temperatures: results.temperatures
               }} 
             />
             <TemperatureResultsSection results={results.temperatures} />
@@ -126,6 +126,14 @@ export const ResultsPage = () => {
             <FanSystemResultsSection 
               results={results.fanSystem}
             />
+          </div>
+        </div>
+        <div className="row">
+          <div className="col">
+            <PhysicsParametersSection results={results.physics} />
+          </div>
+          <div className="col">
+            {/* Другие компоненты */}
           </div>
         </div>
 
